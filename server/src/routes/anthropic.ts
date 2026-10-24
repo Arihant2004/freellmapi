@@ -699,7 +699,7 @@ export async function handleMessages(req: Request, res: Response): Promise<void>
     abortInFlight: () => hedgeAbort.abort(newHedgeAbortError()),
     route: () => {
       // Task-type routing (#1127): same header/derivation as /chat/completions.
-      const taskType = resolveTaskType(req, tools, messages);
+      const taskType = resolveTaskType(req, tools, messages, hasImage);
       // #507: inflate the routing estimate from any provider-reported REQUESTED
       // size latched onto state so the existing size gates in router.ts skip
       // low-TPM / small-context models on retry.

@@ -43,6 +43,7 @@ import { isToolBenched } from '../lib/tool-capability.js';
 import { parseModelScope, scopeAllows } from '../lib/model-scope.js';
 import { getKeyQuotaHeadroom, inferQuotaPoolKey } from './provider-quota.js';
 import type { BaseProvider } from '../providers/base.js';
+import type { TaskBias } from '../lib/task-type.js';
 import type { Platform } from '@freellmapi/shared/types.js';
 import type { Db } from '../db/types.js';
 
@@ -1200,8 +1201,11 @@ export function applyReliabilityFloor(chain: ChainRow[]): ChainRow[] {
  * STABLE ranking under the chosen strategy — the fusion panel, which should be a
  * faithful reflection of the user's picked strategy, not a re-sampled draw each
  * request. Priority mode is deterministic either way.
+ *
+ * `requireVision` scopes the intelligence axis to the vision-capable models
+ * (see below); it never drops a row — the vision gate stays in routeRequest.
  */
-function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true, task?: 'code' | 'chat'): ChainRow[] {
+function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true, task?: TaskBias, requireVision = false): ChainRow[] {
   // Tier first, always: it is the one ordering input that score must not be able
   // to override (see ChainRow.match_tier). Zero for every chain built anywhere
   // else, so this is a no-op outside slug-fallback resolution.
@@ -1244,7 +1248,8 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
   }
 
   // Task-type bias (#1127): a client-declared/derived task type moves part of
-  // one axis onto the other (code: speed → intelligence; chat: the reverse).
+  // one axis onto the other (code and vision: speed → intelligence; chat: the
+  // reverse).
   // Applied AFTER the peak-hours adjustment, on the same weights the rest of
   // the chain scores with; opt-in, so absent a signal the preset stands.
   // `fastest`, `reliable` and `custom` are exempt (see TASK_EXEMPT_STRATEGIES),
@@ -1257,7 +1262,17 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
   // Reliability floor: drop chronically-failing models before scoring (#filter).
   chain = applyReliabilityFloor(chain);
 
-  const composites = chain.map(e => intelligenceComposite(e.size_label, e.intelligence_rank));
+  // Modality-aware intelligence: on an image turn only vision-capable models
+  // can serve (routeRequest skips the rest), so the intelligence axis is
+  // min-max normalized across THEM. Normalizing across the whole chain let a
+  // text-only frontier model that is never a candidate here set the top of the
+  // scale, squashing the spread between the vision models into a sliver the
+  // speed axis outweighed — the strongest vision model was not reliably the
+  // one picked. Falls back to the whole chain when no row can see, which only
+  // happens on a request that is about to exhaust anyway.
+  const visionPool = requireVision ? chain.filter(e => e.supports_vision) : [];
+  const intelPool = visionPool.length > 0 ? visionPool : chain;
+  const composites = intelPool.map(e => intelligenceComposite(e.size_label, e.intelligence_rank));
   const intelMin = composites.length ? Math.min(...composites) : 0;
   const intelMax = composites.length ? Math.max(...composites) : 0;
   const keyCounts = usableKeyCountsByPlatform(getDb());
@@ -2160,7 +2175,7 @@ export function resolveFusionCandidate(modelId: string): FusionCandidate | null 
   return null;
 }
 
-export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, preferredModelDbId?: number, requireVision = false, requireTools = false, skipModels?: Set<number>, prefetchedChain?: ChainRow[], requireStructured = false, skipPlatforms?: Set<string>, exactOutputReserve = 0, task?: 'code' | 'chat'): RouteResult {
+export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, preferredModelDbId?: number, requireVision = false, requireTools = false, skipModels?: Set<number>, prefetchedChain?: ChainRow[], requireStructured = false, skipPlatforms?: Set<string>, exactOutputReserve = 0, task?: TaskBias): RouteResult {
   const db = getDb();
 
   const strategy = effectiveRoutingStrategy();
@@ -2168,7 +2183,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
 
   const chain = (prefetchedChain ?? getActiveChain(db)).filter(e => e.enabled);
 
-  const sortedChain = orderChain(chain, strategy, true, task);
+  const sortedChain = orderChain(chain, strategy, true, task, requireVision);
 
   // Exploration toggle (#685/#707 follow-up): when enabled, give a model with
   // no reliability/speed samples a guaranteed chance to be tried, so it stops

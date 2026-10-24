@@ -2512,9 +2512,10 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
       // sessions that never switched — pay no headroom tax.
       const routingEstimate = fallbackRoutingTokens(state, estimatedTotal, outputReserve) + (handoffPossible ? HANDOFF_MAX_TOKENS : 0);
       // Task-type routing (#1127): the client can declare code/chat intent via
-      // header; otherwise a bounded rule derives it (tools present / code
-      // markers). undefined keeps the preset weights untouched.
-      const taskType = resolveTaskType(req, tools, messages);
+      // header; otherwise a bounded rule derives it (image present → vision,
+      // tools present / code markers → code). undefined keeps the preset
+      // weights untouched.
+      const taskType = resolveTaskType(req, tools, messages, hasImage);
       return routeRequest(routingEstimate, state.skipKeys.size > 0 ? state.skipKeys : undefined, preferredModel, hasImage, wantsTools, state.skipModels.size > 0 ? state.skipModels : undefined, groupChain ?? resolvedChain?.chain, samplingParams.response_format !== undefined, state.skipPlatforms.size > 0 ? state.skipPlatforms : undefined, outputReserve, taskType);
     },
     dispatch: async (route, attempt, ctx) => {

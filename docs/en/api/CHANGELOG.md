@@ -4,6 +4,10 @@
 
 Doc revision history for `docs/api/`, seeded from API-relevant commits.
 
+## 2026-10-24
+
+- **docs(api): document image-aware routing** — `X-FreeLLM-Task-Type: auto` now derives `vision` for a request carrying an image (same speed → intelligence shift as `code`), and image requests score the intelligence axis across vision-capable models only. Sources: `server/src/lib/task-type.ts` (`resolveTaskType`), `server/src/services/router.ts` (`orderChain`).
+
 ## 2026-10-23
 
 - **fix(api): client-profile keys now authenticate `/v1/messages` and `/v1beta`** — the `sk-cp-*` keys from #411 were accepted only by `/v1/chat/completions` and `/v1/responses`; the Anthropic and Gemini surfaces still compared the unified key alone, so a downstream app speaking the Claude or Gemini wire format got `401` with its own profile key. Both routes now resolve through `resolveAuth`: profile keys carry their server-enforced system prompt (injected first, after compression on `/v1/messages`, ahead of `systemInstruction` on `/v1beta` — same ordering contract), and a disabled profile fails like a bad key. Source: `server/src/routes/anthropic.ts`, `server/src/routes/gemini.ts`.

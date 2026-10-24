@@ -201,9 +201,11 @@ export function peakAdjustedWeights(
 // ── Task-type weight bias (#1127) ─────────────────────────────────────────
 // A coding turn is quality-sensitive, a chat turn is budget/speed-sensitive.
 // When a request declares (or derives) a task type, move part of one axis onto
-// the other — code: speed → intelligence, chat: intelligence → speed. The
-// deltas are deliberately conservative and the whole thing is opt-in: no
-// header (or `auto` with no code signal) leaves the preset weights untouched.
+// the other — code: speed → intelligence, chat: intelligence → speed. An image
+// turn (`vision`, derived only) is quality-sensitive too and shifts like code.
+// The deltas are deliberately conservative and the whole thing is opt-in: no
+// header (or `auto` with no code or image signal) leaves the preset weights
+// untouched.
 export const TASK_WEIGHT_SHARE = 0.3;
 
 /**
@@ -226,7 +228,7 @@ export function isTaskExemptStrategy(strategy: RoutingStrategy): boolean {
 
 export function taskAdjustedWeights(
   base: RoutingWeights,
-  task: 'code' | 'chat',
+  task: 'code' | 'chat' | 'vision',
   strategy: RoutingStrategy,
   share = TASK_WEIGHT_SHARE,
 ): { weights: RoutingWeights; adjusted: boolean } {
@@ -234,7 +236,7 @@ export function taskAdjustedWeights(
   // share 0 disables the bias entirely — an operator-set value of 0 means "keep
   // the preset weights for this task type".
   if (share <= 0) return { weights: base, adjusted: false };
-  if (task === 'code') {
+  if (task === 'code' || task === 'vision') {
     const shift = base.speed * share;
     if (shift <= 0) return { weights: base, adjusted: false };
     return {
@@ -407,7 +409,9 @@ export function intelligenceComposite(sizeLabel: string, intelligenceRank: numbe
 // the min/max across the enabled chain. We min-max normalize to [0,1], 1 = best.
 export function intelligenceScore(composite: number, min: number, max: number): number {
   if (max <= min) return 1; // single model or all equal → neutral-high
-  return (composite - min) / (max - min);
+  // Clamped: the router may normalize over a subset of the chain (image turns
+  // scale to the vision-capable models), leaving the other rows out of range.
+  return Math.min(1, Math.max(0, (composite - min) / (max - min)));
 }
 
 // ── Guardrail: free-quota headroom ──────────────────────────────────────────

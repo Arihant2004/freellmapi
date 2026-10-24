@@ -112,4 +112,20 @@ describe('resolveTaskType', () => {
     expect(resolveTaskType(reqWith('auto'), undefined, [{ role: 'user', content: 'hello there' }])).toBeUndefined();
     expect(resolveTaskType(reqWith(undefined), undefined, [{ role: 'user', content: 'hello there' }])).toBeUndefined();
   });
+
+  it('auto derives vision for an image turn, ahead of the code heuristic', () => {
+    const image = [{ role: 'user' as const, content: [
+      { type: 'text', text: 'what is in this picture?' },
+      { type: 'image_url', image_url: { url: 'data:image/png;base64,AAAA' } },
+    ] }];
+    expect(resolveTaskType(reqWith(undefined), undefined, image, true)).toBe('vision');
+    expect(resolveTaskType(reqWith('auto'), undefined, image, true)).toBe('vision');
+    // A screenshot of code is still an image turn first.
+    expect(resolveTaskType(reqWith(undefined), [{ type: 'function' }], [{ role: 'user', content: '```js\nx\n```' }], true)).toBe('vision');
+  });
+
+  it('an explicit declaration wins over an image', () => {
+    expect(resolveTaskType(reqWith('chat'), undefined, [{ role: 'user', content: 'hi' }], true)).toBe('chat');
+    expect(resolveTaskType(reqWith('code'), undefined, [{ role: 'user', content: 'hi' }], true)).toBe('code');
+  });
 });

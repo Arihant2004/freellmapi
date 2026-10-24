@@ -5,14 +5,20 @@
 // budget/speed-sensitive. The declared header is the strongest signal; when it
 // is absent or `auto`, a cheap bounded rule derives the type from the request
 // shape (tool-bearing requests → code; code markers in the last user message →
-// code). The result is a SOFT preference: capability gates and the failover
-// chain are untouched, and `undefined` means "leave the preset weights alone".
+// code). An image in the request derives `vision`: image understanding is
+// quality-sensitive the same way code is — a weak vision model misreads the
+// picture and answers confidently about something that isn't there. The result
+// is a SOFT preference: capability gates and the failover chain are untouched,
+// and `undefined` means "leave the preset weights alone".
 
 import type { Request } from 'express';
 import type { ChatMessage } from '@freellmapi/shared/types.js';
 import { contentToString } from './content.js';
 
 export type TaskType = 'code' | 'chat' | 'auto';
+
+/** The concrete bias the router applies. `vision` is derived only, never declared. */
+export type TaskBias = 'code' | 'chat' | 'vision';
 
 export const TASK_TYPE_HEADER = 'x-freellm-task-type';
 
@@ -89,16 +95,24 @@ export function deriveTaskType(tools: unknown[] | undefined, messages: ChatMessa
  * Resolve the effective task bias for a request: the explicit header wins;
  * `auto` falls back to derivation. Returns undefined when there is no signal
  * worth biasing for — callers then leave the routing weights untouched, so the
- * default behaviour is unchanged. `auto` only ever biases UP toward `code`:
- * `chat` is the ordinary case, and silently re-weighting the bulk of traffic
- * in `auto` mode would defeat the point of an opt-in knob.
+ * default behaviour is unchanged. `auto` only ever biases UP toward quality
+ * (`vision` or `code`): `chat` is the ordinary case, and silently re-weighting
+ * the bulk of traffic in `auto` mode would defeat the point of an opt-in knob.
+ *
+ * `hasImage` comes from the caller rather than a rescan of `messages`: each
+ * route already computed it from its own wire format (the Anthropic route
+ * converts image blocks before routing), and the router's vision gate uses
+ * that same flag. An image is a fact about the request, not a guess, so it is
+ * checked before the code heuristic.
  */
 export function resolveTaskType(
   req: Request,
   tools: unknown[] | undefined,
   messages: ChatMessage[] | undefined,
-): 'code' | 'chat' | undefined {
+  hasImage = false,
+): TaskBias | undefined {
   const declared = parseTaskTypeHeader(req);
   if (declared === 'code' || declared === 'chat') return declared;
+  if (hasImage) return 'vision';
   return deriveTaskType(tools, messages) === 'code' ? 'code' : undefined;
 }

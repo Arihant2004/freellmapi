@@ -5,6 +5,7 @@ import {
 import { getDb, initDb } from '../../db/index.js';
 import { addToActiveChain } from '../helpers/chain.js';
 import * as ratelimit from '../../services/ratelimit.js';
+import type { TaskBias } from '../../lib/task-type.js';
 
 vi.mock('../../services/ratelimit.js', async () => {
   const actual = await vi.importActual('../../services/ratelimit.js');
@@ -29,12 +30,13 @@ const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 function addModel(opts: {
   platform: string; modelId: string; name: string;
   intelligenceRank: number; speedRank: number; sizeLabel: string; budget: string; priority: number;
+  supportsVision?: boolean;
 }): number {
   const db = getDb();
   db.prepare(`
     INSERT INTO models (platform, model_id, display_name, intelligence_rank, speed_rank, size_label, monthly_token_budget, enabled, supports_vision, supports_tools)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 1)
-  `).run(opts.platform, opts.modelId, opts.name, opts.intelligenceRank, opts.speedRank, opts.sizeLabel, opts.budget);
+    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, 1)
+  `).run(opts.platform, opts.modelId, opts.name, opts.intelligenceRank, opts.speedRank, opts.sizeLabel, opts.budget, opts.supportsVision ? 1 : 0);
   const id = (db.prepare('SELECT id FROM models WHERE platform = ? AND model_id = ?')
     .get(opts.platform, opts.modelId) as { id: number }).id;
   db.prepare('INSERT INTO fallback_config (model_db_id, priority, enabled) VALUES (?, ?, 1)').run(id, opts.priority);
@@ -62,10 +64,10 @@ function addHistory(platform: string, modelId: string, opts: {
   }
 }
 
-function pickCounts(runs: number, task?: 'code' | 'chat'): Record<string, number> {
+function pickCounts(runs: number, task?: TaskBias, requireVision = false): Record<string, number> {
   const counts: Record<string, number> = {};
   for (let i = 0; i < runs; i++) {
-    const r = routeRequest(100, undefined, undefined, false, false, undefined, undefined, false, undefined, 0, task);
+    const r = routeRequest(100, undefined, undefined, requireVision, false, undefined, undefined, false, undefined, 0, task);
     counts[r.modelId] = (counts[r.modelId] ?? 0) + 1;
   }
   return counts;
@@ -153,5 +155,51 @@ describe('task-type-aware routing', () => {
     refreshStatsCache(getDb(), true);
     const counts = pickCounts(TASK_RUNS, 'code');
     expect(counts['fast'] ?? 0).toBeGreaterThan(counts['smart'] ?? 0);
+  });
+
+  // Fixture for image turns: a text-only Frontier model that is the best (and
+  // fast) model overall, a Medium vision model that is the strongest one that
+  // can SEE but slow, and a Small vision model that is weak but blazing fast.
+  // Normalized across the whole chain, the text-only model set the top of the
+  // intelligence scale, so the Medium vision model scored 1/3 and the Small one
+  // 0 — the speed axis decided the image turn. Normalized across the vision
+  // models only, the strongest one that can actually serve scores 1.
+  function seedTextVsVision() {
+    addModel({ platform: 'google', modelId: 'frontier-text', name: 'Frontier Text', intelligenceRank: 1, speedRank: 1, sizeLabel: 'Frontier', budget: '~50M', priority: 1 });
+    addModel({ platform: 'mistral', modelId: 'vision-smart', name: 'Vision Smart', intelligenceRank: 1, speedRank: 9, sizeLabel: 'Medium', budget: '~50M', priority: 2, supportsVision: true });
+    addModel({ platform: 'groq', modelId: 'vision-fast', name: 'Vision Fast', intelligenceRank: 1, speedRank: 1, sizeLabel: 'Small', budget: '~50M', priority: 3, supportsVision: true });
+    addHistory('google', 'frontier-text', { successes: 100, failures: 0, outTokens: 10000, latencyMs: 100, ttfbMs: 10 });
+    addHistory('mistral', 'vision-smart', { successes: 100, failures: 0, outTokens: 1, latencyMs: 60000, ttfbMs: 4999 });
+    addHistory('groq', 'vision-fast', { successes: 100, failures: 0, outTokens: 10000, latencyMs: 100, ttfbMs: 10 });
+  }
+
+  it('an image turn goes to the strongest vision model, not the fastest', () => {
+    seedTextVsVision();
+    setRoutingStrategy('balanced');
+    refreshStatsCache(getDb(), true);
+    // What resolveTaskType returns for an image request with no header.
+    const counts = pickCounts(TASK_RUNS, 'vision', true);
+    expect(counts['frontier-text'] ?? 0).toBe(0);
+    expect(counts['vision-smart'] ?? 0).toBeGreaterThan(counts['vision-fast'] ?? 0);
+  });
+
+  it('scales the intelligence axis to the vision models even without a task bias', () => {
+    seedTextVsVision();
+    setRoutingStrategy('balanced');
+    refreshStatsCache(getDb(), true);
+    // Whole-chain normalization gave vision-smart 1/3 intelligence against
+    // vision-fast's full speed lead — a ~0.17 score gap Thompson noise never
+    // closes, so it was picked essentially never. Scaled to the vision pool
+    // the two axes balance, and it wins a real share of draws.
+    const counts = pickCounts(TASK_RUNS, undefined, true);
+    expect(counts['vision-smart'] ?? 0).toBeGreaterThan(TASK_RUNS * 0.2);
+  });
+
+  it('a text turn still goes to the strongest model overall', () => {
+    seedTextVsVision();
+    setRoutingStrategy('balanced');
+    refreshStatsCache(getDb(), true);
+    const counts = pickCounts(TASK_RUNS);
+    expect(counts['frontier-text'] ?? 0).toBeGreaterThan((counts['vision-smart'] ?? 0) + (counts['vision-fast'] ?? 0));
   });
 });

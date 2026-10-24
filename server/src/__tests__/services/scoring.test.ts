@@ -79,6 +79,13 @@ describe('scoring: intelligence axis', () => {
   it('returns neutral-high when all models are equal', () => {
     expect(intelligenceScore(5, 5, 5)).toBe(1);
   });
+
+  it('clamps a composite outside a subset-normalized range', () => {
+    // Image turns normalize over the vision models only; a text-only model
+    // above or below that range must still land in [0, 1].
+    expect(intelligenceScore(4000, 1000, 2000)).toBe(1);
+    expect(intelligenceScore(500, 1000, 2000)).toBe(0);
+  });
 });
 
 describe('scoring: intelligence_rank is visible on the axis (#673)', () => {
@@ -385,6 +392,12 @@ describe('scoring: task-type weight bias (#1127)', () => {
     expect(chat.weights.speed).toBeCloseTo(base.speed + base.intelligence * TASK_WEIGHT_SHARE, 5);
     expect(chat.weights.intelligence).toBeCloseTo(base.intelligence - base.intelligence * TASK_WEIGHT_SHARE, 5);
     expect(chat.weights.reliability + chat.weights.speed + chat.weights.intelligence).toBeCloseTo(1, 5);
+  });
+
+  it('treats an image turn as quality-sensitive, the same shift as code', () => {
+    const base = BANDIT_PRESETS.balanced;
+    expect(taskAdjustedWeights(base, 'vision', 'balanced')).toEqual(taskAdjustedWeights(base, 'code', 'balanced'));
+    expect(taskAdjustedWeights(base, 'vision', 'fastest')).toEqual({ weights: base, adjusted: false });
   });
 
   it('exempts fastest, reliable and custom', () => {
