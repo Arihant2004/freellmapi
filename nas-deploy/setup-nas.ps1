@@ -16,6 +16,7 @@
 # connects to nothing.
 param(
   [string]$NasIp = '192.168.0.167',
+  [int]$NasPort = 2222,
   [string]$NasUser,
   [switch]$DryRun
 )
@@ -99,8 +100,8 @@ if ($DryRun) {
   return
 }
 
-if (-not (Test-NetConnection -ComputerName $NasIp -Port 22 -InformationLevel Quiet -WarningAction SilentlyContinue)) {
-  Write-Host "SSH is not reachable on $NasIp port 22. In DSM: Control Panel > Terminal & SNMP > tick 'Enable SSH service' > Apply, then run this again." -ForegroundColor Yellow
+if (-not (Test-NetConnection -ComputerName $NasIp -Port $NasPort -InformationLevel Quiet -WarningAction SilentlyContinue)) {
+  Write-Host "SSH is not reachable on $NasIp port $NasPort. In DSM: Control Panel > Terminal & SNMP > tick 'Enable SSH service' (port $NasPort) > Apply, then run this again." -ForegroundColor Yellow
   exit 1
 }
 if (-not $NasUser) { $NasUser = Read-Host 'DSM admin username' }
@@ -110,7 +111,7 @@ $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteScript.Re
 # file because it holds the token, and is deleted whether or not it succeeds.
 $remote = 'umask 077; echo ' + $b64 + ' | base64 -d > /tmp/freellmapi-setup.sh; bash /tmp/freellmapi-setup.sh; rc=$?; rm -f /tmp/freellmapi-setup.sh; exit $rc'
 
-ssh -t "$NasUser@$NasIp" $remote
+ssh -t -p $NasPort "$NasUser@$NasIp" $remote
 if ($LASTEXITCODE -eq 0) {
   Write-Host "`nNAS is on your private image. Open http://${NasIp}:3001 and check your keys and settings are there." -ForegroundColor Green
 } else {
