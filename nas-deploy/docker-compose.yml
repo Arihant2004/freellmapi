@@ -3,7 +3,9 @@ services:
     # Own build: every push to main on github.com/Arihant2004/freellmapi
     # rebuilds this tag (.github/workflows/docker.yml), and watchtower below
     # picks it up. `:main` follows each push; `:latest` would only move on a
-    # tagged release.
+    # tagged release. The package is private: the NAS must `docker login
+    # ghcr.io` once (first pull), and watchtower logs in with GHCR_USER /
+    # GHCR_TOKEN from .env.
     image: ghcr.io/arihant2004/freellmapi:main
     container_name: freellmapi
     env_file:
@@ -62,6 +64,10 @@ services:
       WATCHTOWER_LABEL_ENABLE: "true"
       WATCHTOWER_SCOPE: freellmapi
       WATCHTOWER_CLEANUP: "true"
+      # The image is a PRIVATE GHCR package, so every pull needs a login: a
+      # GitHub classic token with only the read:packages scope, kept in .env.
+      REPO_USER: ${GHCR_USER:?set GHCR_USER in .env}
+      REPO_PASS: ${GHCR_TOKEN:?set GHCR_TOKEN in .env}
     labels:
       com.centurylinklabs.watchtower.scope: freellmapi
     volumes:
