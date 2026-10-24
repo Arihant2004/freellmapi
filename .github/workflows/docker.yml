@@ -6,6 +6,9 @@ on:
     tags: ['v*.*.*']
   pull_request:
     branches: [main]
+  # Manual rebuild from the Actions tab — e.g. for a push that landed before
+  # Actions were enabled on a fork, which GitHub never builds retroactively.
+  workflow_dispatch:
 
 permissions:
   contents: read
