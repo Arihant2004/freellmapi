@@ -1,0 +1,72 @@
+services:
+  freellmapi:
+    # Own build: every push to main on github.com/Arihant2004/freellmapi
+    # rebuilds this tag (.github/workflows/docker.yml), and watchtower below
+    # picks it up. `:main` follows each push; `:latest` would only move on a
+    # tagged release.
+    image: ghcr.io/arihant2004/freellmapi:main
+    container_name: freellmapi
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      # Settings → Check for updates → "Update now" goes through the
+      # watchtower sidecar below, authenticated with WATCHTOWER_TOKEN.
+      FREELLMAPI_SELF_UPDATE_URL: http://watchtower:8080
+      FREELLMAPI_SELF_UPDATE_TOKEN: ${WATCHTOWER_TOKEN:?set WATCHTOWER_TOKEN in .env}
+    labels:
+      # Watchtower only touches containers carrying BOTH labels.
+      com.centurylinklabs.watchtower.enable: "true"
+      com.centurylinklabs.watchtower.scope: freellmapi
+    ports:
+      - "0.0.0.0:3001:3001"
+    volumes:
+      - freellmapi-data:/app/server/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/api/ping').then((res) => { if (!res.ok) process.exit(1); }).catch(() => process.exit(1));"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  # Auto-update: checks GHCR on WATCHTOWER_SCHEDULE and, when `main` points
+  # at a new build, pulls it and recreates freellmapi with the same volume
+  # and .env. The token-protected HTTP endpoint also serves the dashboard's
+  # "Update now" button. No port is published and no other container is
+  # touched, but it mounts the Docker socket (root-equivalent on the host).
+  watchtower:
+    image: nickfedor/watchtower:1.22.3
+    container_name: freellmapi-watchtower
+    environment:
+      WATCHTOWER_HTTP_API_ENDPOINTS: update
+      WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_TOKEN:?set WATCHTOWER_TOKEN in .env}
+      # Keep scheduled checks running alongside the HTTP endpoint.
+      WATCHTOWER_HTTP_API_PERIODIC_POLLS: "true"
+      # 6-field cron (sec min hour dom mon dow): every 5 minutes, so a push
+      # reaches the NAS within ~5 min of its build finishing.
+      WATCHTOWER_SCHEDULE: ${WATCHTOWER_SCHEDULE:-0 */5 * * * *}
+      TZ: Asia/Kolkata
+      # Synology Container Manager ships Docker 24 (max API 1.43); without
+      # this the client asks for a newer API and the daemon refuses it.
+      DOCKER_API_VERSION: "1.43"
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_SCOPE: freellmapi
+      WATCHTOWER_CLEANUP: "true"
+    labels:
+      com.centurylinklabs.watchtower.scope: freellmapi
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  freellmapi-data:
