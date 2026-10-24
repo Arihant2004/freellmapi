@@ -94,7 +94,14 @@ export interface VideoResult {
   video: Buffer;
   contentType: string;
 }
-export interface ImageParams { prompt: string; n?: number; size?: string }
+export interface ImageParams {
+  prompt: string;
+  n?: number;
+  size?: string;
+  /** Images the model should edit or take as reference, already downscaled to
+   *  REFERENCE_IMAGE_MAX_DIMENSION. Only reference-capable rows are tried. */
+  referenceImages?: Buffer[];
+}
 export interface SpeechParams { input: string; voice?: string; format?: string }
 export interface VideoParams {
   prompt: string;
@@ -293,6 +300,18 @@ function mediaRequestStyle(row: MediaModelRow): string | null {
   }
 }
 
+// FLUX.2 on Workers AI takes up to four reference images (input_image_0..3) in
+// the same multipart body as the prompt, each smaller than 512×512. The catalog
+// marks exactly that family with requestStyle 'multipart'; every other image
+// row is text-to-image only and would ignore the image and draw something
+// unrelated, so a request carrying references never reaches one.
+export const MAX_REFERENCE_IMAGES = 4;
+export const REFERENCE_IMAGE_MAX_DIMENSION = 511;
+
+export function supportsReferenceImages(row: MediaModelRow): boolean {
+  return row.platform === 'cloudflare' && mediaRequestStyle(row) === 'multipart';
+}
+
 interface VideoMeta {
   /** Provider-native deployment id. Hugging Face model ids are mapped to fal
    *  queue ids in the catalog so runtime calls need no mutable discovery step. */
@@ -423,6 +442,9 @@ async function callImageProvider(
         form.append('prompt', p.prompt);
         form.append('width', String(w));
         form.append('height', String(h));
+        (p.referenceImages ?? []).slice(0, MAX_REFERENCE_IMAGES).forEach((image, i) => {
+          form.append(`input_image_${i}`, new Blob([new Uint8Array(image)], { type: 'image/png' }), `input_image_${i}.png`);
+        });
         init = { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form };
       } else {
         // Cloudflare's FLUX.1 Schnell schema is prompt-only; dimensions that
@@ -855,7 +877,17 @@ function chainError(modality: MediaModality, lastError: MediaError | null, hints
 
 /** Generate image(s), failing over across providers serving the modality. */
 export async function runImageGeneration(model: string | undefined, params: ImageParams): Promise<ImageResult> {
-  const chain = resolveMediaChain(model, 'image');
+  let chain = resolveMediaChain(model, 'image');
+  if (params.referenceImages?.length) {
+    chain = chain.filter(supportsReferenceImages);
+    if (chain.length === 0) {
+      throw new MediaError(
+        'No enabled image model can work from an input image; that needs FLUX.2 on Cloudflare Workers AI.',
+        503,
+        'no_image_edit_model',
+      );
+    }
+  }
   let lastError: MediaError | null = null;
   // Only a chain rate limited end to end earns a Retry-After (the soonest).
   const hints = new RetryHintTracker();

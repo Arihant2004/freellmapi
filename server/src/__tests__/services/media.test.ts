@@ -217,6 +217,38 @@ describe('media service', () => {
       expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined();
     });
 
+    it('reference images ride as input_image_N and skip text-only models', async () => {
+      // Higher priority (tried first) but text-to-image only: it would ignore
+      // the image and draw something unrelated, so it must never be called.
+      addMedia('cloudflare', '@cf/black-forest-labs/flux-1-schnell', 'image', 1);
+      addMedia('cloudflare', '@cf/black-forest-labs/flux-2-klein-9b', 'image', 2, null,
+        JSON.stringify({ requestStyle: 'multipart' }));
+      addKey('cloudflare', 'acct123:token456');
+      const fetchMock = vi.fn(async () => jsonResponse({ result: { image: 'EDITB64' }, success: true }));
+      globalThis.fetch = fetchMock as any;
+      const refs = [Buffer.from('first'), Buffer.from('second')];
+      const r = await runImageGeneration('auto', { prompt: 'make it festive', referenceImages: refs });
+      expect(r.modelId).toBe('@cf/black-forest-labs/flux-2-klein-9b');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(String(fetchMock.mock.calls[0][0])).toContain('flux-2-klein-9b');
+      const form = (fetchMock.mock.calls[0][1] as RequestInit).body as FormData;
+      const first = form.get('input_image_0') as Blob;
+      expect(first.type).toBe('image/png');
+      expect(Buffer.from(await first.arrayBuffer()).toString()).toBe('first');
+      expect(Buffer.from(await (form.get('input_image_1') as Blob).arrayBuffer()).toString()).toBe('second');
+      expect(form.get('input_image_2')).toBeNull();
+    });
+
+    it('reference images with no reference-capable model fail with no_image_edit_model', async () => {
+      addMedia('cloudflare', '@cf/black-forest-labs/flux-1-schnell', 'image');
+      addKey('cloudflare', 'acct123:token456');
+      const fetchMock = vi.fn();
+      globalThis.fetch = fetchMock as any;
+      await expect(runImageGeneration('auto', { prompt: 'x', referenceImages: [Buffer.from('a')] }))
+        .rejects.toMatchObject({ status: 503, code: 'no_image_edit_model' });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('Cloudflare: binary SDXL response → b64_json', async () => {
       addMedia('cloudflare', '@cf/stabilityai/stable-diffusion-xl-base-1.0', 'image');
       addKey('cloudflare', 'acct123:token456');

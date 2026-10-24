@@ -6,6 +6,7 @@ Doc revision history for `docs/api/`, seeded from API-relevant commits.
 
 ## 2026-10-24
 
+- **docs(api): document image answers in chat** — new "Image answers in chat" section: an auto-routed `/v1/chat/completions` turn that asks for a picture is answered by an image model as a Markdown image link; attached or referenced images are edited via FLUX.2 reference images; opt-outs (`X-FreeLLM-Image-Intent: off`, `IMAGE_INTENT=off`), response headers, and `GET /v1/images/files/<name>` storage. Sources: `server/src/lib/image-intent.ts`, `server/src/services/chat-image.ts`, `server/src/services/generated-images.ts`.
 - **docs(api): document image-aware routing** — `X-FreeLLM-Task-Type: auto` now derives `vision` for a request carrying an image (same speed → intelligence shift as `code`), and image requests score the intelligence axis across vision-capable models only. Sources: `server/src/lib/task-type.ts` (`resolveTaskType`), `server/src/services/router.ts` (`orderChain`).
 
 ## 2026-10-23

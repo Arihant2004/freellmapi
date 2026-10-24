@@ -248,6 +248,19 @@ print(resp.choices[0].message.content)
 
 If no vision-capable model is enabled in your Fallback Chain, an image request returns a clear `422` (`code: "no_vision_model"`) rather than silently dropping the image. (Image input on `/v1/responses` isn't supported yet — use `/v1/chat/completions`.)
 
+## Image answers in chat
+
+A vision model can read an image but only ever answers in text. So when an auto-routed `/v1/chat/completions` turn asks for a **picture** as the answer, it goes to an image model instead, and the reply is an ordinary assistant message holding a Markdown image:
+
+```
+![Generated image](http://<host>:3001/v1/images/files/3f9c…e1.png)
+```
+
+- **What counts:** the latest user message has to be a short instruction to make or change something visual. It opens with a creation verb ("make", "generate", "design", "draw"…, after politeness like "please" or "can you"). It then either names a visual thing (image, logo, poster, wallpaper…) before any text deliverable, or edits an image already in the conversation ("turn this into a cartoon", "make it more festive"). Questions ("what's in this picture?"), text about an image ("a caption for this photo", "a prompt for Midjourney"), code, and long messages stay on the chat path. Borderline wording gets a text answer.
+- **Editing:** an image attached to that turn is sent to the model as a reference, as is the latest earlier image when the turn points back at it ("make this logo Diwali-themed", "make it bigger"). Only reference-capable models are tried: today that's **FLUX.2** on Cloudflare Workers AI, which takes up to 4 reference images, downscaled below 512×512. The output keeps the reference's aspect ratio, with the long edge at 1024 px. Without a Cloudflare key, the reply explains what to add instead of drawing an unrelated picture.
+- **Where it doesn't apply:** a pinned `model`, `fusion`, and tool-bearing (agent) turns keep the chat path. To opt out per request, send `X-FreeLLM-Image-Intent: off`; for the whole server, set `IMAGE_INTENT=off`. The response carries `X-FreeLLM-Image-Intent: generated` or `failed`, with `X-Routed-Via` naming the image model.
+- **Storage:** images are stored next to the database (`generated-images/`, or `GENERATED_IMAGES_DIR`) and served at `GET /v1/images/files/<name>`. The newest `GENERATED_IMAGES_MAX` are kept (default 200). The route needs no API key, because an `<img>` tag can't send one; the 128-bit random file name is the access control.
+
 ## Document attachments
 
 Anthropic's `document` content blocks are accepted on `/v1/messages` when their source is already text:

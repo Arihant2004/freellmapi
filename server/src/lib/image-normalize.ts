@@ -266,6 +266,35 @@ async function normalizeDataUrl(sharp: Sharp, candidate: Candidate, opts: Resolv
   }
 }
 
+export interface FittedImage {
+  buffer: Buffer;
+  mime: 'image/png';
+  /** Dimensions after EXIF auto-orientation and downscaling. */
+  width: number;
+  height: number;
+}
+
+/**
+ * Decode an image and downscale it to fit inside maxDimension × maxDimension,
+ * re-encoded as PNG so a logo's transparency survives. Used for reference
+ * images handed to an image model, which caps their size. Null when sharp is
+ * unavailable (see loadSharp) or the bytes don't decode; never throws.
+ */
+export async function fitImageWithin(buffer: Buffer, maxDimension: number): Promise<FittedImage | null> {
+  const sharp = await loadSharp();
+  if (!sharp) return null;
+  try {
+    const { data, info } = await sharp(buffer)
+      .rotate()
+      .resize({ width: maxDimension, height: maxDimension, fit: 'inside', withoutEnlargement: true })
+      .png()
+      .toBuffer({ resolveWithObject: true });
+    return { buffer: data, mime: 'image/png', width: info.width, height: info.height };
+  } catch {
+    return null;
+  }
+}
+
 export interface ImageNormalizeSummary {
   messages: ChatMessage[];
   /** Number of images actually re-encoded. */

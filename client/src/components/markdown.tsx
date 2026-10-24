@@ -162,6 +162,13 @@ const components: Components = {
     )
   },
   pre: ({ children }) => <Pre>{children}</Pre>,
+  // Generated images arrive as Markdown images (server chat image answers):
+  // fit them to the bubble and open the full size on click.
+  img: ({ src, alt }) => (
+    <a href={typeof src === 'string' ? src : undefined} target="_blank" rel="noreferrer noopener" className="my-2 block w-fit first:mt-0 last:mb-0">
+      <img src={src} alt={alt ?? ''} loading="lazy" className="max-h-[32rem] max-w-full rounded-lg border" />
+    </a>
+  ),
 }
 
 interface MarkdownProps {

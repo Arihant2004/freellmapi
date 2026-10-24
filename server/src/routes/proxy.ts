@@ -18,6 +18,9 @@ import { contentToString, estimateInputTokens, messageHasImage, normalizeOutboun
 import { routeOutputBudget } from '../lib/output-cap.js';
 import { resolveTaskType } from '../lib/task-type.js';
 import { normalizeMessageImages } from '../lib/image-normalize.js';
+import { detectImageIntent, imageIntentEnabled, type ImageIntent } from '../lib/image-intent.js';
+import { generateChatImage } from '../services/chat-image.js';
+import { loadGeneratedImage } from '../services/generated-images.js';
 import { repairToolArguments, toolSchemaMap } from '../lib/tool-args.js';
 import { invalidToolArgumentsError, invalidToolCallReasons, isToolArgumentValidationEnabled } from '../lib/tool-validate.js';
 import { sanitizeProviderErrorMessage } from '../lib/error-redaction.js';
@@ -1071,6 +1074,62 @@ function mediaErrorType(status: number): string {
   return 'server_error';
 }
 
+// Files behind the image links in chat image answers (services/chat-image.ts).
+// No auth: an <img> tag cannot carry the bearer key, so the 128-bit random
+// file name is the capability (services/generated-images.ts).
+proxyRouter.get('/images/files/:name', (req: Request, res: Response) => {
+  const file = loadGeneratedImage(String(req.params.name));
+  if (!file) {
+    res.status(404).json({ error: { message: 'Image not found', type: 'invalid_request_error' } });
+    return;
+  }
+  res.setHeader('Content-Type', file.mime);
+  res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.send(file.buffer);
+});
+
+// Origin for links the client will load back, from the Host it used. A Host
+// with anything but host[:port] characters gets a root-relative link instead.
+function publicBaseUrl(req: Request): string {
+  const host = req.get('host') ?? '';
+  return /^[A-Za-z0-9.\-:[\]]+$/.test(host) ? `${req.protocol}://${host}` : '';
+}
+
+// A chat turn that asked for a picture, answered in chat-completion shape so
+// any OpenAI client shows it as the assistant's reply (see lib/image-intent.ts).
+async function answerWithGeneratedImage(req: Request, res: Response, intent: ImageIntent, stream: boolean): Promise<void> {
+  const id = `chatcmpl-img-${crypto.randomBytes(6).toString('hex')}`;
+  const created = Math.floor(Date.now() / 1000);
+  // Headers wait for the result even when streaming: X-Routed-Via names the
+  // image model that answered, which clients (the playground's model label)
+  // read off the response headers.
+  const result = await generateChatImage(intent, publicBaseUrl(req));
+  const model = result.platform && result.modelId ? `${result.platform}/${result.modelId}` : 'image';
+  res.setHeader('X-FreeLLM-Image-Intent', result.ok ? 'generated' : 'failed');
+  if (result.platform && result.modelId) res.setHeader('X-Routed-Via', routedViaValue(result.platform, result.modelId));
+
+  if (!stream) {
+    res.json({
+      id, object: 'chat.completion', created, model,
+      choices: [{ index: 0, message: { role: 'assistant', content: result.content }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    });
+    return;
+  }
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  const frame = (delta: Record<string, unknown>, finish: string | null) =>
+    `data: ${JSON.stringify({ id, object: 'chat.completion.chunk', created, model, choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;
+  try {
+    res.write(frame({ role: 'assistant', content: result.content }, null));
+    res.write(frame({}, 'stop'));
+    res.write('data: [DONE]\n\n');
+  } catch { /* socket gone */ }
+  res.end();
+}
+
 proxyRouter.post('/images/generations', async (req: Request, res: Response) => {
   if (!requireInferenceAuth(req, res)) return;
   const parsed = ImageBody.safeParse(req.body);
@@ -2005,6 +2064,20 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
   // token budget, payload limits, and upstream transfer all see the shrunk
   // bytes (see lib/image-normalize.ts). Mutates the image blocks in place.
   await normalizeMessageImages(messages);
+
+  // Image intent (lib/image-intent.ts): an auto-routed turn asking for a
+  // picture ("make this logo Diwali-themed") goes to an image model, since a
+  // chat model can only answer in text. Sits ahead of the vision gate below:
+  // editing an upload needs an image model, not a vision chat model. A pinned
+  // model, a tool-bearing (agent) turn, `X-FreeLLM-Image-Intent: off` and
+  // IMAGE_INTENT=off all keep the chat path.
+  if (isAutoModel(requestedModel) && !(tools?.length) && imageIntentEnabled(req)) {
+    const intent = detectImageIntent(messages);
+    if (intent) {
+      await answerWithGeneratedImage(req, res, intent, stream === true);
+      return;
+    }
+  }
 
   // Token estimation is intentionally a heuristic (~4 chars per token). Used
   // for routing decisions (skip a model whose budget is too small) and for
