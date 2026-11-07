@@ -99,7 +99,9 @@ fi
 if sudo $D compose version >/dev/null 2>&1; then DC="sudo $D compose"; else DC="sudo /usr/local/bin/docker-compose"; fi
 echo '==> Restarting freellmapi + watchtower + tailscale (data volume is kept)'
 cd "$WORKDIR"
-if ! $DC -p "$PROJECT" -f "$CONFIG" up -d; then
+# One retry: watchtower may be swapping freellmapi for a fresh build at this
+# very moment, which fails `up` with "No such container".
+if ! $DC -p "$PROJECT" -f "$CONFIG" up -d && { echo '    retrying in 20s'; sleep 20; ! $DC -p "$PROJECT" -f "$CONFIG" up -d; }; then
   echo "Restart FAILED. To roll back: sudo cp '$CONFIG.bak-$STAMP' '$CONFIG'; sudo cp '$ENVFILE.bak-$STAMP' '$ENVFILE'; then start the project in Container Manager."
   exit 1
 fi

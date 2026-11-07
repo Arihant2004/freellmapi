@@ -90,7 +90,10 @@ services:
     image: tailscale/tailscale:stable
     pull_policy: always
     container_name: freellmapi-tailscale
-    hostname: freellmapi
+    # No `hostname: freellmapi` here: it would map that name to this
+    # container in its own /etc/hosts, and serve.json's proxy target
+    # (http://freellmapi:3001) would loop back into tailscale → 502.
+    # TS_HOSTNAME alone sets the name on the tailnet.
     environment:
       TS_HOSTNAME: freellmapi
       TS_AUTHKEY: ${TS_AUTHKEY:-}
