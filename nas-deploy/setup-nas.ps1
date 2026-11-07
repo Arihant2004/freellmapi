@@ -1,11 +1,14 @@
-# One-time NAS switch-over to the private auto-deploy image.
+# Applies nas-deploy/ to the NAS: the private auto-deploy image plus the
+# Tailscale Funnel that publishes the API.
 #
 # Logs the NAS in to ghcr.io, then updates the EXISTING freellmapi compose
 # project in place: backs up its compose file and .env, installs
-# nas-deploy/docker-compose.yml, adds GHCR_USER / GHCR_TOKEN to the NAS .env
-# (other values, like ENCRYPTION_KEY, are left untouched), and restarts on
-# ghcr.io/arihant2004/freellmapi:main. Same compose project name, so the
-# data volume (keys, settings, history) is kept.
+# nas-deploy/docker-compose.yml and tailscale/serve.json, adds GHCR_USER /
+# GHCR_TOKEN (and TS_AUTHKEY, when nas-deploy/.env has one) to the NAS .env
+# where missing (other values, like ENCRYPTION_KEY, are left untouched), and
+# restarts the stack. Same compose project name, so the data volume (keys,
+# settings, history) is kept. Ends by printing the public API address.
+# Safe to re-run.
 #
 # Needs SSH enabled on the NAS (DSM: Control Panel > Terminal & SNMP) and a
 # DSM administrator account. Asks for the DSM password twice: SSH, then sudo.
@@ -28,7 +31,9 @@ $envLines = Get-Content (Join-Path $here '.env')
 $ghcrUser = (($envLines | Where-Object { $_ -like 'GHCR_USER=*' }) -replace '^GHCR_USER=', '').Trim()
 $ghcrToken = (($envLines | Where-Object { $_ -like 'GHCR_TOKEN=*' }) -replace '^GHCR_TOKEN=', '').Trim()
 if (-not $ghcrUser -or -not $ghcrToken) { throw 'GHCR_USER / GHCR_TOKEN missing from nas-deploy\.env' }
+$tsAuthKey = ([string]($envLines | Where-Object { $_ -like 'TS_AUTHKEY=*' } | Select-Object -Last 1) -replace '^TS_AUTHKEY=', '').Trim()
 $compose = ([IO.File]::ReadAllText((Join-Path $here 'docker-compose.yml')) -replace "`r`n", "`n").TrimEnd("`n")
+$serve = ([IO.File]::ReadAllText((Join-Path $here 'tailscale\serve.json')) -replace "`r`n", "`n").TrimEnd("`n")
 
 # Runs on the NAS. Placeholders are filled in below; the compose file goes in
 # through a quoted heredoc so its ${...} references stay literal.
@@ -39,6 +44,7 @@ D=/usr/local/bin/docker
 IMAGE=ghcr.io/arihant2004/freellmapi:main
 GHCR_USER='__GHCR_USER__'
 GHCR_TOKEN='__GHCR_TOKEN__'
+TS_AUTHKEY='__TS_AUTHKEY__'
 
 echo '==> sudo: enter your DSM password'
 sudo -v
@@ -73,15 +79,25 @@ sudo tee "$CONFIG" >/dev/null <<'COMPOSE_EOF'
 __COMPOSE__
 COMPOSE_EOF
 
+echo '==> Installing the Tailscale Funnel config'
+sudo mkdir -p "$(dirname "$CONFIG")/tailscale"
+sudo tee "$(dirname "$CONFIG")/tailscale/serve.json" >/dev/null <<'SERVE_EOF'
+__SERVE__
+SERVE_EOF
+
 if sudo grep -q '^GHCR_TOKEN=' "$ENVFILE"; then
   echo '    .env already has GHCR_TOKEN; left as is'
 else
   printf '\n# Login for the private image (read:packages token)\nGHCR_USER=%s\nGHCR_TOKEN=%s\n' "$GHCR_USER" "$GHCR_TOKEN" | sudo tee -a "$ENVFILE" >/dev/null
   echo '    added GHCR_USER / GHCR_TOKEN to .env'
 fi
+if [ -n "$TS_AUTHKEY" ] && ! sudo grep -q '^TS_AUTHKEY=' "$ENVFILE"; then
+  printf '\n# One-time Tailscale login for the public API address\nTS_AUTHKEY=%s\n' "$TS_AUTHKEY" | sudo tee -a "$ENVFILE" >/dev/null
+  echo '    added TS_AUTHKEY to .env'
+fi
 
 if sudo $D compose version >/dev/null 2>&1; then DC="sudo $D compose"; else DC="sudo /usr/local/bin/docker-compose"; fi
-echo '==> Restarting freellmapi + watchtower (data volume is kept)'
+echo '==> Restarting freellmapi + watchtower + tailscale (data volume is kept)'
 cd "$WORKDIR"
 if ! $DC -p "$PROJECT" -f "$CONFIG" up -d; then
   echo "Restart FAILED. To roll back: sudo cp '$CONFIG.bak-$STAMP' '$CONFIG'; sudo cp '$ENVFILE.bak-$STAMP' '$ENVFILE'; then start the project in Container Manager."
@@ -89,14 +105,32 @@ if ! $DC -p "$PROJECT" -f "$CONFIG" up -d; then
 fi
 sleep 5
 sudo $D ps --filter "label=com.docker.compose.project=$PROJECT" --format '    {{.Names}}  {{.Image}}  {{.Status}}'
+
+echo '==> Waiting for Tailscale'
+URL=''
+for i in $(seq 1 15); do
+  STATUS=$(sudo $D exec freellmapi-tailscale tailscale status --json 2>/dev/null || true)
+  if printf '%s' "$STATUS" | grep -q '"BackendState": *"Running"'; then
+    URL=$(printf '%s' "$STATUS" | grep -o '"DNSName": *"[^"]*"' | head -1 | sed 's/.*"\([^"]*\)"$/\1/; s/\.$//')
+    break
+  fi
+  printf '%s' "$STATUS" | grep -q '"BackendState": *"NeedsLogin"' && break
+  sleep 2
+done
+if [ -n "$URL" ]; then
+  echo "==> Public API address: https://$URL/v1"
+else
+  LOGIN=$(sudo $D logs freellmapi-tailscale 2>&1 | grep -o 'https://login.tailscale.com/[^ ]*' | tail -1 || true)
+  echo "==> Tailscale is not logged in. ${LOGIN:+Open $LOGIN to log it in, or }put TS_AUTHKEY in nas-deploy/.env and run this again."
+fi
 echo "==> Done. Backups: $CONFIG.bak-$STAMP and $ENVFILE.bak-$STAMP"
 '@
 
 $remoteScript = $remoteScript -replace "`r`n", "`n"
-$remoteScript = $remoteScript.Replace('__GHCR_USER__', $ghcrUser).Replace('__COMPOSE__', $compose)
+$remoteScript = $remoteScript.Replace('__GHCR_USER__', $ghcrUser).Replace('__COMPOSE__', $compose).Replace('__SERVE__', $serve)
 
 if ($DryRun) {
-  $remoteScript.Replace('__GHCR_TOKEN__', 'REDACTED')
+  $remoteScript.Replace('__GHCR_TOKEN__', 'REDACTED').Replace('__TS_AUTHKEY__', $(if ($tsAuthKey) { 'REDACTED' } else { '' }))
   return
 }
 
@@ -106,14 +140,14 @@ if (-not (Test-NetConnection -ComputerName $NasIp -Port $NasPort -InformationLev
 }
 if (-not $NasUser) { $NasUser = Read-Host 'DSM admin username' }
 
-$b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteScript.Replace('__GHCR_TOKEN__', $ghcrToken)))
+$b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoteScript.Replace('__GHCR_TOKEN__', $ghcrToken).Replace('__TS_AUTHKEY__', $tsAuthKey)))
 # The script travels as base64 (no quoting to survive), lands in a 0600 temp
 # file because it holds the token, and is deleted whether or not it succeeds.
 $remote = 'umask 077; echo ' + $b64 + ' | base64 -d > /tmp/freellmapi-setup.sh; bash /tmp/freellmapi-setup.sh; rc=$?; rm -f /tmp/freellmapi-setup.sh; exit $rc'
 
 ssh -t -p $NasPort "$NasUser@$NasIp" $remote
 if ($LASTEXITCODE -eq 0) {
-  Write-Host "`nNAS is on your private image. Open http://${NasIp}:3001 and check your keys and settings are there." -ForegroundColor Green
+  Write-Host "`nNAS is up to date. Use the 'Public API address' above as BACKUP_AI_BASE_URL; the dashboard stays at http://${NasIp}:3001 (office only)." -ForegroundColor Green
 } else {
   Write-Host "`nSetup did not finish (exit $LASTEXITCODE). Read the messages above; nothing is changed unless it got past 'Backing up'." -ForegroundColor Yellow
 }

@@ -17,6 +17,9 @@ services:
       # watchtower sidecar below, authenticated with WATCHTOWER_TOKEN.
       FREELLMAPI_SELF_UPDATE_URL: http://watchtower:8080
       FREELLMAPI_SELF_UPDATE_TOKEN: ${WATCHTOWER_TOKEN:?set WATCHTOWER_TOKEN in .env}
+      # Public traffic arrives through the tailscale proxy below: trust its one
+      # hop, so rate limits see the real client and image links come out https.
+      TRUST_PROXY: "1"
     labels:
       # Watchtower only touches containers carrying BOTH labels.
       com.centurylinklabs.watchtower.enable: "true"
@@ -74,5 +77,33 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
+  # Public HTTPS for the API only (Tailscale Funnel):
+  # https://freellmapi.<tailnet>.ts.net/v1/… is proxied to the freellmapi
+  # container (tailscale/serve.json). The dashboard (/, /api) is not published
+  # and stays LAN-only; every /v1 call still needs the API key. Userspace
+  # networking needs no /dev/net/tun or extra privileges. TS_AUTHKEY logs the
+  # node in once; the state volume keeps its identity after that.
+  # Not watchtower-managed: watchtower's registry login is the GHCR one, which
+  # Docker Hub would reject. pull_policy picks up the newest stable whenever
+  # the stack is re-applied (nas-deploy/setup-nas.ps1).
+  tailscale:
+    image: tailscale/tailscale:stable
+    pull_policy: always
+    container_name: freellmapi-tailscale
+    hostname: freellmapi
+    environment:
+      TS_HOSTNAME: freellmapi
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_USERSPACE: "true"
+      TS_SERVE_CONFIG: /config/serve.json
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./tailscale/serve.json:/config/serve.json:ro
+    depends_on:
+      - freellmapi
+    restart: unless-stopped
+
 volumes:
   freellmapi-data:
+  tailscale-state:
