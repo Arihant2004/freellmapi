@@ -408,6 +408,8 @@
     "copyFullKey": "ሙሉ ቁልፍ ቅዳ",
     "copiedKey": "ተቀድዟል",
     "baseUrl": "የመሠረት URL",
+    "publicTitle": "ለድረ-ገጾችዎ",
+    "publicDesc": "ይህ አድራሻ ከኢንተርኔት ማንኛውም ቦታ ይሰራል። ከ API ቁልፍዎ ጋር ይጠቀሙበት፤ ዳሽቦርዱ ራሱ በአውታረ መረብዎ ውስጥ ብቻ የግል ሆኖ ይቆያል።",
     "endpointChat": "ተወያይ",
     "endpointResponses": "ምላሾች",
     "endpointEmbeddings": "መክተቻዎች",

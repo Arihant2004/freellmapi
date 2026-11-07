@@ -408,6 +408,8 @@
     "copyFullKey": "Copiați cheia completă",
     "copiedKey": "Copiat",
     "baseUrl": "Baza URL",
+    "publicTitle": "Pentru site-urile tale",
+    "publicDesc": "Această adresă funcționează de oriunde de pe internet. Folosește-o cu cheia ta API; panoul de control rămâne privat în rețeaua ta.",
     "endpointChat": "Chat",
     "endpointResponses": "Răspunsuri",
     "endpointEmbeddings": "Încorporații",

@@ -408,6 +408,8 @@
     "copyFullKey": "Salin kunci lengkap",
     "copiedKey": "Disalin",
     "baseUrl": "Basis URL",
+    "publicTitle": "Untuk situs web Anda",
+    "publicDesc": "Alamat ini dapat diakses dari mana saja di internet. Gunakan bersama kunci API Anda; dasbor tetap privat di jaringan Anda.",
     "endpointChat": "Obrolan",
     "endpointResponses": "Tanggapan",
     "endpointEmbeddings": "Penyematan",

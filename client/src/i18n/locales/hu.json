@@ -408,6 +408,8 @@
     "copyFullKey": "Teljes kulcs másolása",
     "copiedKey": "Másolva",
     "baseUrl": "Alap URL",
+    "publicTitle": "A webhelyeidhez",
+    "publicDesc": "Ez a cím az internet bármely pontjáról működik. Az API-kulcsoddal együtt használd; maga az irányítópult privát marad a hálózatodban.",
     "endpointChat": "Chat",
     "endpointResponses": "Válaszok",
     "endpointEmbeddings": "Beágyazások",

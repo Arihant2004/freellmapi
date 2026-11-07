@@ -408,6 +408,8 @@
     "copyFullKey": "Kopier hele nøkkelen",
     "copiedKey": "Kopiert",
     "baseUrl": "Base URL",
+    "publicTitle": "For nettstedene dine",
+    "publicDesc": "Denne adressen fungerer fra hvor som helst på internett. Bruk den med API-nøkkelen din; selve dashbordet forblir privat i nettverket ditt.",
     "endpointChat": "Chat",
     "endpointResponses": "Svar",
     "endpointEmbeddings": "Innleiringer",

@@ -408,6 +408,8 @@
     "copyFullKey": "Kopiuj pełny klucz",
     "copiedKey": "Skopiowano",
     "baseUrl": "Podstawa URL",
+    "publicTitle": "Dla Twoich stron",
+    "publicDesc": "Ten adres działa z dowolnego miejsca w internecie. Używaj go razem ze swoim kluczem API; sam panel pozostaje prywatny w Twojej sieci.",
     "endpointChat": "Czat",
     "endpointResponses": "Odpowiedzi",
     "endpointEmbeddings": "Osadzenia",

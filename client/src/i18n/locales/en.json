@@ -409,6 +409,8 @@
     "copyFullKey": "Copy full key",
     "copiedKey": "Copied",
     "baseUrl": "Base URL",
+    "publicTitle": "For your websites",
+    "publicDesc": "This address works from anywhere on the internet. Use it with your API key; the dashboard itself stays private to your network.",
     "endpointChat": "Chat",
     "endpointResponses": "Responses",
     "endpointEmbeddings": "Embeddings",

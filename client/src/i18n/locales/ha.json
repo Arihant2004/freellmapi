@@ -408,6 +408,8 @@
     "copyFullKey": "Kwafi cikakken maɓalli",
     "copiedKey": "Kwafi",
     "baseUrl": "Tushen URL",
+    "publicTitle": "Don shafukan yanar gizonku",
+    "publicDesc": "Wannan adireshin yana aiki daga ko ina a intanet. Yi amfani da shi tare da maɓallin API ɗinka; dashboard ɗin kansa yana nan a sirri a cikin hanyar sadarwarka.",
     "endpointChat": "Taɗi",
     "endpointResponses": "Martani",
     "endpointEmbeddings": "Abun ciki",

@@ -408,6 +408,8 @@
     "copyFullKey": "کپی کلید کامل",
     "copiedKey": "کپی شده است",
     "baseUrl": "پایه URL",
+    "publicTitle": "برای وب‌سایت‌های شما",
+    "publicDesc": "این نشانی از هر جای اینترنت کار می‌کند. آن را همراه کلید API خود استفاده کنید؛ داشبورد همچنان فقط در شبکه شما خصوصی می‌ماند.",
     "endpointChat": "چت کنید",
     "endpointResponses": "پاسخ ها",
     "endpointEmbeddings": "جاسازی ها",

@@ -408,6 +408,8 @@
     "copyFullKey": "Anahtarın tamamını kopyala",
     "copiedKey": "Kopyalandı",
     "baseUrl": "Temel URL",
+    "publicTitle": "Web siteleriniz için",
+    "publicDesc": "Bu adres internetin her yerinden çalışır. API anahtarınızla birlikte kullanın; panonun kendisi ağınıza özel kalır.",
     "endpointChat": "Sohbet",
     "endpointResponses": "Yanıtlar",
     "endpointEmbeddings": "Gömmeler",

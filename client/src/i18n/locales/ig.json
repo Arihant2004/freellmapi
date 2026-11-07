@@ -408,6 +408,8 @@
     "copyFullKey": "Detuo igodo zuru ezu",
     "copiedKey": "Eṅomiri",
     "baseUrl": "Ntọala URL",
+    "publicTitle": "Maka weebụsaịtị gị",
+    "publicDesc": "Adreesị a na-arụ ọrụ site n’ebe ọ bụla n’ịntanetị. Jiri ya na igodo API gị; dashboard n’onwe ya ka bụ nzuzo n’ime netwọk gị.",
     "endpointChat": "Kpaa nkata",
     "endpointResponses": "Azịza ya",
     "endpointEmbeddings": "Ntinye",

@@ -408,6 +408,8 @@
     "copyFullKey": "전체 키 복사",
     "copiedKey": "복사됨",
     "baseUrl": "베이스 URL",
+    "publicTitle": "웹사이트용",
+    "publicDesc": "이 주소는 인터넷 어디에서나 작동합니다. API 키와 함께 사용하세요. 대시보드 자체는 네트워크 안에서만 비공개로 유지됩니다.",
     "endpointChat": "채팅",
     "endpointResponses": "응답",
     "endpointEmbeddings": "임베딩",

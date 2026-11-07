@@ -408,6 +408,8 @@
     "copyFullKey": "Salin kunci penuh",
     "copiedKey": "disalin",
     "baseUrl": "URL asas",
+    "publicTitle": "Untuk laman web anda",
+    "publicDesc": "Alamat ini berfungsi dari mana-mana di internet. Gunakannya bersama kunci API anda; papan pemuka itu sendiri kekal peribadi dalam rangkaian anda.",
     "endpointChat": "Sembang",
     "endpointResponses": "Respons",
     "endpointEmbeddings": "Penyisipan",

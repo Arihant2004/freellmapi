@@ -408,6 +408,8 @@
     "copyFullKey": "Kopiraj cijeli ključ",
     "copiedKey": "Kopirano",
     "baseUrl": "Baza URL",
+    "publicTitle": "Za vaše web-stranice",
+    "publicDesc": "Ova adresa radi s bilo kojeg mjesta na internetu. Koristite je sa svojim API ključem; sama nadzorna ploča ostaje privatna u vašoj mreži.",
     "endpointChat": "Chat",
     "endpointResponses": "Odgovori",
     "endpointEmbeddings": "Ugradnja",

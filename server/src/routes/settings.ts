@@ -473,9 +473,24 @@ settingsRouter.put('/guardrails', (req: Request, res: Response) => {
   });
 });
 
+// The address websites and apps outside the LAN use for /v1 (e.g. a Tailscale
+// Funnel URL), set by the deployment via PUBLIC_API_URL and shown on the Keys
+// page. The dashboard can't discover it: it is only ever reached on the LAN
+// address. Anything but an http(s) URL is ignored.
+export function publicApiUrl(): string | null {
+  const raw = process.env.PUBLIC_API_URL?.trim().replace(/\/+$/, '');
+  if (!raw) return null;
+  try {
+    const { protocol } = new URL(raw);
+    return protocol === 'https:' || protocol === 'http:' ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
 // Get the unified API key
 settingsRouter.get('/api-key', (_req: Request, res: Response) => {
-  res.json({ apiKey: getUnifiedApiKey() });
+  res.json({ apiKey: getUnifiedApiKey(), publicUrl: publicApiUrl() });
 });
 
 // Regenerate the unified API key

@@ -408,6 +408,8 @@
     "copyFullKey": "Kopiera hela nyckeln",
     "copiedKey": "Kopierat",
     "baseUrl": "Bas URL",
+    "publicTitle": "För dina webbplatser",
+    "publicDesc": "Den här adressen fungerar varifrån som helst på internet. Använd den med din API-nyckel; själva instrumentpanelen förblir privat i ditt nätverk.",
     "endpointChat": "Chatt",
     "endpointResponses": "Svar",
     "endpointEmbeddings": "Inbäddningar",

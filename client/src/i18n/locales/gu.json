@@ -408,6 +408,8 @@
     "copyFullKey": "સંપૂર્ણ કી કૉપિ કરો",
     "copiedKey": "નકલ કરી",
     "baseUrl": "આધાર URL",
+    "publicTitle": "તમારી વેબસાઇટ્સ માટે",
+    "publicDesc": "આ સરનામું ઇન્ટરનેટ પર ગમે ત્યાંથી કામ કરે છે. તેને તમારી API કી સાથે વાપરો; ડેશબોર્ડ પોતે ફક્ત તમારા નેટવર્કમાં ખાનગી રહે છે.",
     "endpointChat": "ચેટ",
     "endpointResponses": "પ્રતિભાવો",
     "endpointEmbeddings": "એમ્બેડિંગ્સ",

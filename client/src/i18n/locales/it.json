@@ -408,6 +408,8 @@
     "copyFullKey": "Copia chiave completa",
     "copiedKey": "Copiato",
     "baseUrl": "URL di base",
+    "publicTitle": "Per i tuoi siti web",
+    "publicDesc": "Questo indirizzo funziona da qualsiasi punto di internet. Usalo con la tua chiave API; la dashboard resta privata nella tua rete.",
     "endpointChat": "Chat",
     "endpointResponses": "Risposte",
     "endpointEmbeddings": "Embedding",

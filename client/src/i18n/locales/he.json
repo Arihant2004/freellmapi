@@ -408,6 +408,8 @@
     "copyFullKey": "העתקת המפתח המלא",
     "copiedKey": "הועתק",
     "baseUrl": "בסיס URL",
+    "publicTitle": "לאתרים שלך",
+    "publicDesc": "הכתובת הזו פועלת מכל מקום באינטרנט. השתמש בה עם מפתח ה-API שלך; לוח הבקרה עצמו נשאר פרטי ברשת שלך.",
     "endpointChat": "שיחה",
     "endpointResponses": "תגובות",
     "endpointEmbeddings": "הטבעות",

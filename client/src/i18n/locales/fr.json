@@ -408,6 +408,8 @@
     "copyFullKey": "Copier la clé complète",
     "copiedKey": "Copié",
     "baseUrl": "URL de base",
+    "publicTitle": "Pour vos sites web",
+    "publicDesc": "Cette adresse fonctionne depuis n'importe où sur Internet. Utilisez-la avec votre clé API ; le tableau de bord reste privé à votre réseau.",
     "endpointChat": "Chat",
     "endpointResponses": "Responses",
     "endpointEmbeddings": "Embeddings",

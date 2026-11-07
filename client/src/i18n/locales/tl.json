@@ -408,6 +408,8 @@
     "copyFullKey": "Kopyahin ang buong susi",
     "copiedKey": "kinopya",
     "baseUrl": "Base URL",
+    "publicTitle": "Para sa iyong mga website",
+    "publicDesc": "Gumagana ang address na ito mula saanman sa internet. Gamitin ito kasama ng iyong API key; mananatiling pribado sa iyong network ang dashboard.",
     "endpointChat": "Chat",
     "endpointResponses": "Mga Tugon",
     "endpointEmbeddings": "Mga Embedding",

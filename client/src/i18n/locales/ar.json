@@ -408,6 +408,8 @@
     "copyFullKey": "نسخ المفتاح الكامل",
     "copiedKey": "منقول",
     "baseUrl": "قاعدة URL",
+    "publicTitle": "لمواقعك الإلكترونية",
+    "publicDesc": "يعمل هذا العنوان من أي مكان على الإنترنت. استخدمه مع مفتاح API الخاص بك؛ تبقى لوحة التحكم نفسها خاصة بشبكتك.",
     "endpointChat": "الدردشة",
     "endpointResponses": "الردود",
     "endpointEmbeddings": "التضمين",

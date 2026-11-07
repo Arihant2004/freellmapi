@@ -408,6 +408,8 @@
     "copyFullKey": "مکمل کلید کاپی کریں",
     "copiedKey": "کاپی",
     "baseUrl": "بیس URL",
+    "publicTitle": "آپ کی ویب سائٹس کے لیے",
+    "publicDesc": "یہ پتہ انٹرنیٹ پر کہیں سے بھی کام کرتا ہے۔ اسے اپنی API کلید کے ساتھ استعمال کریں؛ ڈیش بورڈ صرف آپ کے نیٹ ورک تک نجی رہتا ہے۔",
     "endpointChat": "گپ شپ",
     "endpointResponses": "جوابات",
     "endpointEmbeddings": "ایمبیڈنگز",

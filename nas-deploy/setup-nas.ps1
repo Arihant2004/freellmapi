@@ -120,7 +120,16 @@ for i in $(seq 1 15); do
   sleep 2
 done
 if [ -n "$URL" ]; then
-  echo "==> Public API address: https://$URL/v1"
+  PUBLIC="https://$URL/v1"
+  echo "==> Public API address: $PUBLIC"
+  # Shown on the dashboard's Keys page ("For your websites"); only rewritten,
+  # and freellmapi only recreated, when the address changed.
+  if ! sudo grep -qx "PUBLIC_API_URL=$PUBLIC" "$ENVFILE"; then
+    sudo sed -i '/^PUBLIC_API_URL=/d' "$ENVFILE"
+    printf '\n# Public API address shown on the dashboard Keys page\nPUBLIC_API_URL=%s\n' "$PUBLIC" | sudo tee -a "$ENVFILE" >/dev/null
+    echo '==> Adding it to the dashboard (restarting freellmapi)'
+    $DC -p "$PROJECT" -f "$CONFIG" up -d freellmapi
+  fi
 else
   LOGIN=$(sudo $D logs freellmapi-tailscale 2>&1 | grep -o 'https://login.tailscale.com/[^ ]*' | tail -1 || true)
   echo "==> Tailscale is not logged in. ${LOGIN:+Open $LOGIN to log it in, or }put TS_AUTHKEY in nas-deploy/.env and run this again."

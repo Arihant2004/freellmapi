@@ -408,6 +408,8 @@
     "copyFullKey": "Copiar chave completa",
     "copiedKey": "Copiado",
     "baseUrl": "URL base",
+    "publicTitle": "Para seus sites",
+    "publicDesc": "Este endereço funciona de qualquer lugar da internet. Use-o com sua chave de API; o painel continua privado à sua rede.",
     "endpointChat": "Chat",
     "endpointResponses": "Responses",
     "endpointEmbeddings": "Embeddings",

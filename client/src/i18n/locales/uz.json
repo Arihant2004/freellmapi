@@ -408,6 +408,8 @@
     "copyFullKey": "To'liq kalitni nusxalash",
     "copiedKey": "Ko‘chirildi",
     "baseUrl": "Baza URL",
+    "publicTitle": "Saytlaringiz uchun",
+    "publicDesc": "Bu manzil internetning istalgan joyidan ishlaydi. Uni API kalitingiz bilan ishlating; boshqaruv panelining o‘zi faqat tarmog‘ingizda yopiq qoladi.",
     "endpointChat": "Chat",
     "endpointResponses": "Javoblar",
     "endpointEmbeddings": "O'rnatishlar",

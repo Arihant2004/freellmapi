@@ -408,6 +408,8 @@
     "copyFullKey": "Volledige sleutel kopiëren",
     "copiedKey": "Gekopieerd",
     "baseUrl": "Basis URL",
+    "publicTitle": "Voor je websites",
+    "publicDesc": "Dit adres werkt overal vandaan op internet. Gebruik het met je API-sleutel; het dashboard zelf blijft privé binnen je netwerk.",
     "endpointChat": "Chat",
     "endpointResponses": "Reacties",
     "endpointEmbeddings": "Embeddings",

@@ -408,6 +408,8 @@
     "copyFullKey": "Kopírovat celý klíč",
     "copiedKey": "Zkopírováno",
     "baseUrl": "Základní URL",
+    "publicTitle": "Pro vaše weby",
+    "publicDesc": "Tato adresa funguje odkudkoli z internetu. Používejte ji se svým API klíčem; samotný panel zůstává soukromý ve vaší síti.",
     "endpointChat": "Chat",
     "endpointResponses": "Reakce",
     "endpointEmbeddings": "Vložení",

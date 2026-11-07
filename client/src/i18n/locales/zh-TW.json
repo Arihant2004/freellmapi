@@ -408,6 +408,8 @@
     "copyFullKey": "複製完整金鑰",
     "copiedKey": "已複製",
     "baseUrl": "基礎 URL",
+    "publicTitle": "用於你的網站",
+    "publicDesc": "此位址可從網際網路上的任何地方存取。請搭配你的 API 金鑰使用；控制台本身仍只在你的網路內可存取。",
     "endpointChat": "對話",
     "endpointResponses": "回應",
     "endpointEmbeddings": "嵌入",

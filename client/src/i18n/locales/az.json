@@ -408,6 +408,8 @@
     "copyFullKey": "Tam açarı kopyala",
     "copiedKey": "Kopyalandı",
     "baseUrl": "Baza URL",
+    "publicTitle": "Saytlarınız üçün",
+    "publicDesc": "Bu ünvan internetin istənilən yerindən işləyir. Onu API açarınızla istifadə edin; idarə paneli isə yalnız şəbəkənizdə məxfi qalır.",
     "endpointChat": "Söhbət",
     "endpointResponses": "Cavablar",
     "endpointEmbeddings": "Yerləşdirmələr",

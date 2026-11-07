@@ -127,3 +127,34 @@ it('never shows the revoked key unmasked while the new one loads', async () => {
   expect(seen.some(text => text.includes('sk-old-key-before-regen'))).toBe(false)
   expect(code().textContent).toContain('sk-fresh-key-after-regen')
 })
+
+it('shows the public address panel for websites only when the server has one', async () => {
+  vi.mocked(apiFetch).mockImplementation(async path =>
+    path === '/api/settings/api-key' ? { apiKey: 'sk-secret-value-123', publicUrl: null } : { ok: true })
+  await mount()
+  expect(container.textContent).not.toContain('For your websites')
+
+  act(() => root.unmount())
+  root = createRoot(container)
+  vi.mocked(apiFetch).mockImplementation(async path =>
+    path === '/api/settings/api-key'
+      ? { apiKey: 'sk-secret-value-123', publicUrl: 'https://freellmapi.tail33e0b4.ts.net/v1' }
+      : { ok: true })
+  await mount()
+  expect(container.textContent).toContain('For your websites')
+  expect(container.textContent).toContain('https://freellmapi.tail33e0b4.ts.net/v1')
+  // The key stays masked there too until "Show" is clicked.
+  expect([...container.querySelectorAll('code')].filter(c => c.textContent?.includes('sk-secret-value-123'))).toHaveLength(0)
+})
+
+it('keeps the public address after the key is regenerated', async () => {
+  vi.mocked(apiFetch).mockImplementation(async path => {
+    if (path === '/api/settings/api-key') return { apiKey: 'sk-old-key', publicUrl: 'https://freellmapi.tail33e0b4.ts.net/v1' }
+    if (path === '/api/settings/api-key/regenerate') return { apiKey: 'sk-new-key' }
+    return { ok: true }
+  })
+  await mount()
+  await click(findButton('Regenerate')!)
+  await click(findButton('Confirm')!)
+  expect(container.textContent).toContain('https://freellmapi.tail33e0b4.ts.net/v1')
+})

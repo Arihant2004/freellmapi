@@ -408,6 +408,8 @@
     "copyFullKey": "Kopijuoti visą raktą",
     "copiedKey": "Nukopijuota",
     "baseUrl": "Bazės URL",
+    "publicTitle": "Jūsų svetainėms",
+    "publicDesc": "Šis adresas veikia iš bet kurios interneto vietos. Naudokite jį su savo API raktu; pats skydelis lieka privatus jūsų tinkle.",
     "endpointChat": "Pokalbis",
     "endpointResponses": "Atsakymai",
     "endpointEmbeddings": "Įterpimai",

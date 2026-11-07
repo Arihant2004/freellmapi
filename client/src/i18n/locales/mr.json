@@ -408,6 +408,8 @@
     "copyFullKey": "पूर्ण की कॉपी करा",
     "copiedKey": "कॉपी केले",
     "baseUrl": "बेस URL",
+    "publicTitle": "तुमच्या वेबसाइटसाठी",
+    "publicDesc": "हा पत्ता इंटरनेटवर कुठूनही काम करतो. तो तुमच्या API कीसोबत वापरा; डॅशबोर्ड मात्र फक्त तुमच्या नेटवर्कमध्येच खाजगी राहतो.",
     "endpointChat": "गप्पा",
     "endpointResponses": "प्रतिसाद",
     "endpointEmbeddings": "एम्बेडिंग",

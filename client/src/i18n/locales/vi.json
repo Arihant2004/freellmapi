@@ -408,6 +408,8 @@
     "copyFullKey": "Sao chép toàn bộ khóa",
     "copiedKey": "Đã sao chép",
     "baseUrl": "Căn cứ URL",
+    "publicTitle": "Dành cho trang web của bạn",
+    "publicDesc": "Địa chỉ này hoạt động từ bất kỳ đâu trên internet. Hãy dùng nó cùng khóa API của bạn; bảng điều khiển vẫn chỉ riêng tư trong mạng của bạn.",
     "endpointChat": "Trò chuyện",
     "endpointResponses": "Phản hồi",
     "endpointEmbeddings": "Nhúng",

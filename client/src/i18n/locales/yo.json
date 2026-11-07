@@ -408,6 +408,8 @@
     "copyFullKey": "Da bọtini kíkún kọ",
     "copiedKey": "Ti daakọ",
     "baseUrl": "Mimọ URL",
+    "publicTitle": "Fún àwọn ojú-òpó wẹ́ẹ̀bù rẹ",
+    "publicDesc": "Àdírẹ́sì yìí ń ṣiṣẹ́ láti ibikíbi lórí íntánẹ́ẹ̀tì. Lò ó pẹ̀lú kọ́kọ́rọ́ API rẹ; dáṣíbọ́ọ̀dù fúnra rẹ̀ ṣì wà ní ìkọ̀kọ̀ nínú nẹ́tíwọ̀ọ̀kì rẹ.",
     "endpointChat": "Wiregbe",
     "endpointResponses": "Awọn idahun",
     "endpointEmbeddings": "Awọn ifibọ",

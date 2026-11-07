@@ -408,6 +408,8 @@
     "copyFullKey": "Vollständigen Schlüssel kopieren",
     "copiedKey": "Kopiert",
     "baseUrl": "Basis URL",
+    "publicTitle": "Für deine Websites",
+    "publicDesc": "Diese Adresse funktioniert von überall im Internet. Verwende sie mit deinem API-Schlüssel; das Dashboard selbst bleibt auf dein Netzwerk beschränkt.",
     "endpointChat": "Chatten",
     "endpointResponses": "Antworten",
     "endpointEmbeddings": "Einbettungen",

@@ -408,6 +408,8 @@
     "copyFullKey": "Kopioi koko avain",
     "copiedKey": "Kopioitu",
     "baseUrl": "Perus URL",
+    "publicTitle": "Verkkosivustoillesi",
+    "publicDesc": "Tämä osoite toimii mistä tahansa internetissä. Käytä sitä API-avaimesi kanssa; itse hallintapaneeli pysyy yksityisenä verkossasi.",
     "endpointChat": "Chat",
     "endpointResponses": "Vastaukset",
     "endpointEmbeddings": "Upotukset",

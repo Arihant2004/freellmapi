@@ -408,6 +408,8 @@
     "copyFullKey": "ਪੂਰੀ ਕੁੰਜੀ ਕਾਪੀ ਕਰੋ",
     "copiedKey": "ਕਾਪੀ ਕੀਤਾ",
     "baseUrl": "ਬੇਸ URL",
+    "publicTitle": "ਤੁਹਾਡੀਆਂ ਵੈੱਬਸਾਈਟਾਂ ਲਈ",
+    "publicDesc": "ਇਹ ਪਤਾ ਇੰਟਰਨੈੱਟ ’ਤੇ ਕਿਤੋਂ ਵੀ ਕੰਮ ਕਰਦਾ ਹੈ। ਇਸਨੂੰ ਆਪਣੀ API ਕੁੰਜੀ ਨਾਲ ਵਰਤੋ; ਡੈਸ਼ਬੋਰਡ ਸਿਰਫ਼ ਤੁਹਾਡੇ ਨੈੱਟਵਰਕ ਵਿੱਚ ਨਿੱਜੀ ਰਹਿੰਦਾ ਹੈ।",
     "endpointChat": "ਚੈਟ",
     "endpointResponses": "ਜਵਾਬ",
     "endpointEmbeddings": "ਏਮਬੈਡਿੰਗਸ",

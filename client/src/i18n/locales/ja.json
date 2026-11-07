@@ -408,6 +408,8 @@
     "copyFullKey": "キー全体をコピー",
     "copiedKey": "コピーされました",
     "baseUrl": "ベース URL",
+    "publicTitle": "ウェブサイト用",
+    "publicDesc": "このアドレスはインターネット上のどこからでも利用できます。API キーと一緒に使ってください。ダッシュボード自体はネットワーク内でのみ利用できます。",
     "endpointChat": "チャット",
     "endpointResponses": "応答",
     "endpointEmbeddings": "埋め込み",

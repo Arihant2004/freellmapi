@@ -408,6 +408,8 @@
     "copyFullKey": "Nakili ufunguo kamili",
     "copiedKey": "Imenakiliwa",
     "baseUrl": "Msingi wa URL",
+    "publicTitle": "Kwa tovuti zako",
+    "publicDesc": "Anwani hii inafanya kazi kutoka popote kwenye intaneti. Itumie pamoja na ufunguo wako wa API; dashibodi yenyewe inabaki ya faragha ndani ya mtandao wako.",
     "endpointChat": "Soga",
     "endpointResponses": "Majibu",
     "endpointEmbeddings": "Upachikaji",

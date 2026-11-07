@@ -7,13 +7,42 @@ import { Button } from '@/components/ui/button'
 import { ConfirmButton } from '@/components/confirm-button'
 import { useI18n } from '@/i18n'
 
+interface UnifiedKeyData {
+  apiKey: string
+  /** Address for clients outside the LAN (PUBLIC_API_URL), when deployed with one. */
+  publicUrl?: string | null
+}
+
+// One label / value / Copy row of the "For your websites" panel.
+function CopyRow({ label, value, display }: { label: string; value: string; display?: string }) {
+  const { t } = useI18n()
+  const [copied, setCopied] = useState(false)
+  async function copy() {
+    if (!await copyText(value)) {
+      toast.error(t('common.copyFailed'))
+      return
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
+  return (
+    <>
+      <span className="text-muted-foreground">{label}</span>
+      <code className="min-w-0 truncate rounded-md bg-background px-2 py-1 font-mono tabular-nums">{display ?? value}</code>
+      <Button variant="outline" size="sm" onClick={() => void copy()}>
+        {copied ? t('common.copied') : t('common.copy')}
+      </Button>
+    </>
+  )
+}
+
 export function UnifiedKeySection() {
   const { t } = useI18n()
   const queryClient = useQueryClient()
   const [showKey, setShowKey] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const { data, isError } = useQuery<{ apiKey: string }>({
+  const { data, isError } = useQuery<UnifiedKeyData>({
     queryKey: ['unified-key'],
     queryFn: () => apiFetch('/api/settings/api-key'),
   })
@@ -24,7 +53,7 @@ export function UnifiedKeySection() {
       // Write the fresh key into the cache BEFORE unmasking: invalidating
       // alone would leave the old, now-revoked key in the cache until the
       // refetch lands, and it would flash unmasked in the meantime.
-      queryClient.setQueryData<{ apiKey: string }>(['unified-key'], { apiKey: res.apiKey })
+      queryClient.setQueryData<UnifiedKeyData>(['unified-key'], prev => ({ ...prev, apiKey: res.apiKey }))
       // Reveal the fresh key right away: the whole point of regenerating is
       // to move apps to the new value, and a masked box hides exactly the
       // string they need to copy next. Showing it doubles as the success
@@ -102,6 +131,18 @@ export function UnifiedKeySection() {
         <span className="text-muted-foreground">{t('keys.endpointEmbeddings')}</span>
         <code className="font-mono">/v1/embeddings <span className="text-muted-foreground">({t('keys.endpointEmbeddingsHint')})</span></code>
       </div>
+
+      {data?.publicUrl && (
+        <div className="mt-4 rounded-xl border bg-muted/40 p-3">
+          <h3 className="text-xs font-medium">{t('keys.publicTitle')}</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">{t('keys.publicDesc')}</p>
+          <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 text-xs">
+            <CopyRow label={t('keys.baseUrl')} value={data.publicUrl} />
+            <CopyRow label={t('agents.apiKey')} value={apiKey} display={showKey ? apiKey : masked} />
+            <CopyRow label={t('common.model')} value="auto" />
+          </div>
+        </div>
+      )}
 
       <details className="group mt-4 rounded-xl border bg-muted/40 p-3">
         <summary className="cursor-pointer select-none text-xs font-medium">{t('keys.quickStart')}</summary>
